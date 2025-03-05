@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { File, X, Maximize2 } from "lucide-react";
+import { File, X, Maximize2, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PDFPreviewProps {
@@ -18,6 +18,7 @@ interface PDFPreviewProps {
 
 export function PDFPreview({ file, className }: PDFPreviewProps) {
   const [url, setUrl] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const getObjectURL = async () => {
     if (file.type === 'link' && file.url) {
@@ -33,17 +34,22 @@ export function PDFPreview({ file, className }: PDFPreviewProps) {
     }
   };
 
+  const handleOpen = () => {
+    getObjectURL();
+    setIsOpen(true);
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
-          variant="outline" 
-          className={cn("flex items-center gap-2", className)}
-          onClick={getObjectURL}
+          variant="ghost" 
+          size="icon"
+          className={cn("h-8 w-8 rounded-full text-muted-foreground hover:text-primary transition-colors", className)}
+          onClick={handleOpen}
+          title={`Preview ${file.name}`}
         >
-          <File className="h-4 w-4" />
-          <span className="truncate">Preview {file.name}</span>
-          <Maximize2 className="h-4 w-4" />
+          <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] md:max-w-[800px] max-h-[90vh]">

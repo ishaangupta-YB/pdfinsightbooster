@@ -1,10 +1,11 @@
 
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { FileUp, File, X, Link as LinkIcon, Plus } from "lucide-react";
+import { FileUp, File, X, Link as LinkIcon, Plus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PDFPreview } from "./PDFPreview";
 
 interface PDFFile {
   id: string;
@@ -56,6 +57,12 @@ export function PDFUploader({
       // Check file size
       if (file.size > maxSizeMB * 1024 * 1024) {
         errors.push(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
+        return;
+      }
+      
+      // Check for duplicates by name
+      if (files.some(f => f.name === file.name)) {
+        errors.push(`${file.name} is already added.`);
         return;
       }
       
@@ -118,6 +125,12 @@ export function PDFUploader({
       return;
     }
     
+    // Check if URL already exists
+    if (files.some(file => file.type === 'link' && file.url === urlInput)) {
+      toast.error('PDF URL already added.');
+      return;
+    }
+    
     // Check if it's a PDF URL (just a simple extension check)
     if (!urlInput.toLowerCase().endsWith('.pdf')) {
       toast.warning('URL does not point to a PDF file. It may not work as expected.');
@@ -149,7 +162,7 @@ export function PDFUploader({
     <div className="space-y-4">
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ease-smooth",
+          "border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ease-smooth",
           isDragging 
             ? "border-primary bg-primary/5 scale-[1.01]" 
             : "border-border hover:border-primary/50 hover:bg-muted/50"
@@ -159,7 +172,7 @@ export function PDFUploader({
         onDrop={handleDrop}
       >
         <div className="flex flex-col items-center justify-center gap-2">
-          <div className="rounded-full bg-muted p-3">
+          <div className="rounded-full bg-primary/10 p-3">
             <FileUp className="h-6 w-6 text-primary" />
           </div>
           <h3 className="font-medium text-lg mt-2">Upload PDF Documents</h3>
@@ -172,7 +185,7 @@ export function PDFUploader({
             <Button 
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
-              className="mt-2"
+              className="mt-2 shadow-sm hover:shadow-md transition-shadow"
             >
               <Plus className="h-4 w-4 mr-2" />
               Select Files
@@ -181,7 +194,7 @@ export function PDFUploader({
             <Button
               onClick={() => setShowUrlInput(!showUrlInput)}
               variant="outline"
-              className="mt-2"
+              className="mt-2 shadow-sm hover:shadow-md transition-shadow"
             >
               <LinkIcon className="h-4 w-4 mr-2" />
               Add URL
@@ -208,7 +221,7 @@ export function PDFUploader({
             onChange={(e) => setUrlInput(e.target.value)}
             className="flex-1"
           />
-          <Button onClick={handleAddURL}>Add</Button>
+          <Button onClick={handleAddURL} className="shadow-sm">Add</Button>
           <Button 
             variant="ghost" 
             size="icon"
@@ -221,12 +234,18 @@ export function PDFUploader({
       
       {files.length > 0 && (
         <div className="mt-6 space-y-3 animate-fade-in">
-          <h4 className="font-medium">Uploaded Files ({files.length}/{maxFiles})</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium">Uploaded Files ({files.length}/{maxFiles})</h4>
+            <div className="text-xs flex items-center text-muted-foreground gap-1.5">
+              <Shield className="h-3.5 w-3.5" />
+              All files are securely processed
+            </div>
+          </div>
           <ul className="space-y-2">
             {files.map((file) => (
               <li 
                 key={file.id}
-                className="flex items-center justify-between p-3 rounded-md bg-muted/50 border text-sm animate-scale-in"
+                className="flex items-center justify-between p-3 rounded-md bg-muted/50 border shadow-sm text-sm animate-scale-in hover:shadow-md transition-all"
               >
                 <div className="flex items-center gap-3">
                   <div className="rounded-full bg-background p-1.5">
@@ -248,14 +267,26 @@ export function PDFUploader({
                     </span>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => handleRemoveFile(file.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <PDFPreview
+                    file={{
+                      id: file.id,
+                      name: file.name,
+                      type: file.type,
+                      url: file.url,
+                      file: file.file
+                    }}
+                    className="h-8 w-8 p-0"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
+                    onClick={() => handleRemoveFile(file.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

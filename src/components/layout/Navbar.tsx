@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FileText, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
@@ -29,7 +30,7 @@ export function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-smooth",
         isScrolled
-          ? "bg-white/80 backdrop-blur-md shadow-sm dark:bg-black/80"
+          ? "bg-background/80 backdrop-blur-md shadow-sm border-b border-border/50"
           : "bg-transparent"
       )}
     >
@@ -71,21 +72,24 @@ export function Navbar() {
           >
             Results
           </Link>
-          <Button asChild size="sm" className="ml-4">
+          <ThemeToggle />
+          <Button asChild size="sm" className="ml-4 shadow-md hover:shadow-lg transition-shadow">
             <Link to="/dashboard">Get Started</Link>
           </Button>
         </nav>
 
         {/* Mobile menu button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile Navigation */}
@@ -119,7 +123,7 @@ export function Navbar() {
             >
               Results
             </Link>
-            <Button asChild size="sm" className="w-full mt-2">
+            <Button asChild size="sm" className="w-full mt-2 shadow-md">
               <Link to="/dashboard">Get Started</Link>
             </Button>
           </nav>

@@ -1,6 +1,7 @@
 
-import { FileText } from "lucide-react";
+import { FileText, Github } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -64,9 +65,19 @@ export function Footer() {
         </div>
       </div>
       <div className="container border-t mt-8 pt-6">
-        <p className="text-xs text-muted-foreground text-center">
-          © {currentYear} PDFInsight. All rights reserved.
-        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground text-center">
+            © {currentYear} PDFInsight. All rights reserved.
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground">Built by ishaangupta1201</p>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" asChild>
+              <a href="https://github.com/ishaangupta1201" target="_blank" rel="noopener noreferrer">
+                <Github className="h-4 w-4" />
+              </a>
+            </Button>
+          </div>
+        </div>
       </div>
     </footer>
   );
