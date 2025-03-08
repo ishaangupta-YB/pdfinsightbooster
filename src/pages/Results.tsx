@@ -6,7 +6,7 @@ import { ArrowLeft, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ResultsView } from "@/components/ui/ResultsView";
+import { ResultsView } from "@/components/ResultsView";
 import { toast } from "sonner";
 
 // Mock data for demonstration

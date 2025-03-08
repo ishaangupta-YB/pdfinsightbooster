@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { PDFUploader } from "@/components/ui/PDFUploader";
-import { QueryInput } from "@/components/ui/QueryInput";
-import { SchemaDisplay } from "@/components/ui/SchemaDisplay";
+import { PDFUploader } from "@/components/PDFUploader";
+import { QueryInput } from "@/components/QueryInput";
+import { SchemaDisplay } from "@/components/SchemaDisplay";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -101,8 +101,7 @@ const Dashboard = () => {
       toast.error("Please upload at least one PDF file first");
       return;
     }
-    
-    // Start the processing
+     
     setIsProcessing(true);
     
     // Generate mock schema based on query
@@ -176,8 +175,7 @@ const Dashboard = () => {
                   onFilesChange={handleFilesChange}
                   maxFiles={10}
                   maxSizeMB={20}
-                />
-                
+                /> 
                 {files.length > 0 && (
                   <Alert variant="default" className="mt-4 bg-muted/50 border-muted">
                     <AlertCircle className="h-4 w-4 text-primary" />
@@ -291,7 +289,7 @@ const Dashboard = () => {
         </motion.div>
         
         {/* Bottom Button */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -315,7 +313,7 @@ const Dashboard = () => {
               </>
             )}
           </Button>
-        </motion.div>
+        </motion.div> */}
       </main>
       
       <Footer />

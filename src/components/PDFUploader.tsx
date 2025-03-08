@@ -1,6 +1,5 @@
-
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { FileUp, File, X, Link as LinkIcon, Plus, Shield } from "lucide-react";
+import { FileUp, File, X, Link as LinkIcon, Plus, Shield, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -27,11 +26,13 @@ export function PDFUploader({
   onFilesChange,
   files,
   maxFiles = 10,
-  maxSizeMB = 20 
+  maxSizeMB = 10 
 }: PDFUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  // const [deletedFiles, setDeletedFiles] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -43,51 +44,65 @@ export function PDFUploader({
     setIsDragging(false);
   };
 
-  const processFiles = (fileList: FileList) => {
+  const processFiles = async (fileList: FileList) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     const newFiles: PDFFile[] = [];
     const errors: string[] = [];
     
-    Array.from(fileList).forEach(file => {
-      // Check if it's a PDF
-      if (file.type !== 'application/pdf') {
-        errors.push(`${file.name} is not a PDF file.`);
-        return;
+    try {
+      for (const file of Array.from(fileList)) {
+        // Check if it's a PDF
+        if (file.type !== 'application/pdf') {
+          errors.push(`${file.name} is not a PDF file.`);
+          continue;
+        }
+        
+        // Check file size
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          errors.push(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
+          continue;
+        }
+        
+        // Check for duplicates by filename, but allow re-uploading deleted files
+        const isDuplicate = files.some(f => 
+          f.type === 'file' && f.name === file.name
+        );
+        
+        if (isDuplicate) {
+          errors.push(`${file.name} is already added.`);
+          continue;
+        }
+        
+        newFiles.push({
+          id: crypto.randomUUID(),
+          name: file.name,
+          size: file.size,
+          file: file,
+          type: 'file'
+        });
       }
       
-      // Check file size
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        errors.push(`${file.name} exceeds the ${maxSizeMB}MB limit.`);
-        return;
+      if (errors.length > 0) {
+        errors.forEach(error => toast.error(error));
       }
       
-      // Check for duplicates by name
-      if (files.some(f => f.name === file.name)) {
-        errors.push(`${file.name} is already added.`);
-        return;
+      if (newFiles.length > 0) {
+        if (files.length + newFiles.length > maxFiles) {
+          toast.error(`You can only upload up to ${maxFiles} files.`);
+          const spaceLeft = Math.max(0, maxFiles - files.length);
+          onFilesChange([...files, ...newFiles.slice(0, spaceLeft)]);
+        } else {
+          onFilesChange([...files, ...newFiles]);
+          toast.success(`Added ${newFiles.length} file${newFiles.length > 1 ? 's' : ''}.`);
+        }
       }
-      
-      newFiles.push({
-        id: crypto.randomUUID(),
-        name: file.name,
-        size: file.size,
-        file: file,
-        type: 'file'
-      });
-    });
-    
-    if (errors.length > 0) {
-      errors.forEach(error => toast.error(error));
-    }
-    
-    if (newFiles.length > 0) {
-      if (files.length + newFiles.length > maxFiles) {
-        toast.error(`You can only upload up to ${maxFiles} files.`);
-        const spaceLeft = Math.max(0, maxFiles - files.length);
-        onFilesChange([...files, ...newFiles.slice(0, spaceLeft)]);
-      } else {
-        onFilesChange([...files, ...newFiles]);
-        toast.success(`Added ${newFiles.length} file${newFiles.length > 1 ? 's' : ''}.`);
-      }
+    } catch (error) {
+      console.error("Error processing files:", error);
+      toast.error("An error occurred while processing files.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -106,9 +121,22 @@ export function PDFUploader({
     }
   };
 
-  const handleRemoveFile = (id: string) => {
+  const handleRemoveFile = (id: string, fileName: string) => {
+    // Add the filename to the set of deleted files
+    // setDeletedFiles(prev => {
+    //   const newSet = new Set(prev);
+    //   newSet.add(fileName);
+    //   return newSet;
+    // });
+    
+    // Remove the file from the list
     onFilesChange(files.filter(file => file.id !== id));
     toast.success('File removed.');
+    
+    // Reset the file input to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleAddURL = () => {
@@ -126,10 +154,17 @@ export function PDFUploader({
     }
     
     // Check if URL already exists
-    if (files.some(file => file.type === 'link' && file.url === urlInput)) {
+    const isDuplicate = files.some(file => 
+      file.type === 'link' && file.url === urlInput
+    );
+    
+    if (isDuplicate) {
       toast.error('PDF URL already added.');
       return;
     }
+    
+    // Extract filename from URL
+    const urlFilename = urlInput.split('/').pop() || 'PDF Document';
     
     // Check if it's a PDF URL (just a simple extension check)
     if (!urlInput.toLowerCase().endsWith('.pdf')) {
@@ -138,7 +173,7 @@ export function PDFUploader({
     
     const newFile: PDFFile = {
       id: crypto.randomUUID(),
-      name: urlInput.split('/').pop() || 'PDF Document',
+      name: urlFilename,
       size: 0,
       file: urlInput,
       type: 'link',
@@ -186,9 +221,13 @@ export function PDFUploader({
               onClick={() => fileInputRef.current?.click()}
               variant="outline"
               className="mt-2 shadow-sm hover:shadow-md transition-shadow"
+              disabled={isProcessing}
             >
               <Plus className="h-4 w-4 mr-2" />
               Select Files
+              {isProcessing && (
+                <span className="ml-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              )}
             </Button>
             
             <Button
@@ -208,6 +247,7 @@ export function PDFUploader({
             accept="application/pdf"
             multiple
             className="hidden"
+            disabled={isProcessing}
           />
         </div>
       </div>
@@ -269,20 +309,14 @@ export function PDFUploader({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <PDFPreview
-                    file={{
-                      id: file.id,
-                      name: file.name,
-                      type: file.type,
-                      url: file.url,
-                      file: file.file
-                    }}
+                    file={file}
                     className="h-8 w-8 p-0"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
-                    onClick={() => handleRemoveFile(file.id)}
+                    onClick={() => handleRemoveFile(file.id, file.name)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
